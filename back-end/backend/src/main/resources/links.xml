@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<links>
+    <link>
+        <certificateInfo>CN=example.com, O=Example Corp, C=US</certificateInfo>
+        <id>1</id>
+        <responseCode>0</responseCode>
+        <responseMessage>Website scraped successfully</responseMessage>
+        <sslCipher>ECDHE-RSA-AES256-GCM-SHA384</sslCipher>
+        <sslProtocol>TLS</sslProtocol>
+        <url>https://www.example.com</url>
+        <userId>johndoe</userId>
+    </link>
+    <link>
+        <certificateInfo>CN=*.brightspace.com</certificateInfo>
+        <responseCode>0</responseCode>
+        <responseMessage>Website scraped successfully</responseMessage>
+        <sslCipher>TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256</sslCipher>
+        <sslProtocol>TLS/SSL</sslProtocol>
+        <url>https://ucmo.brightspace.com</url>
+        <userId>c@gmail.com</userId>
+    </link>
+    <link>
+        <certificateInfo>Issuer: CN=Amazon RSA 2048 M02,O=Amazon,C=US, Subject: CN=*.brightspace.com, Expiration: Thu Jul 31 18:59:59 CDT 2025</certificateInfo>
+        <responseCode>200</responseCode>
+        <responseMessage>Website scraped successfully</responseMessage>
+        <sslCipher>TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256</sslCipher>
+        <sslProtocol>TLS/SSL</sslProtocol>
+        <url>https://ucmo.brightspace.com/</url>
+        <userId>c@gmail.com</userId>
+    </link>
+    <link>
+        <responseCode>0</responseCode>
+        <responseMessage>URL saved for future analysis</responseMessage>
+        <url>https://ucmo.brightspace.com/</url>
+        <userId>c@gmail.com</userId>
+    </link>
+    <link>
+        <responseCode>0</responseCode>
+        <responseMessage>URL saved for future analysis</responseMessage>
+        <url>https://google.com</url>
+        <userId>c@gmail.com</userId>
+    </link>
+    <link>
+        <certificateInfo>Issuer: CN=WE2,O=Google Trust Services,C=US, Subject: CN=www.google.com, Expiration: Mon Jun 23 03:56:26 CDT 2025</certificateInfo>
+        <responseCode>200</responseCode>
+        <responseMessage>Scraped successfully</responseMessage>
+        <sslCipher>TLS_AES_256_GCM_SHA384</sslCipher>
+        <sslProtocol>TLS/SSL</sslProtocol>
+        <url>https://www.google.com/</url>
+        <userId>c@gmail.com</userId>
+    </link>
+    <link>
+        <certificateInfo>Issuer: CN=WE2,O=Google Trust Services,C=US, Subject: CN=www.google.com, Expiration: Mon Jun 23 03:56:26 CDT 2025</certificateInfo>
+        <responseCode>200</responseCode>
+        <responseMessage>Scraped successfully</responseMessage>
+        <sslCipher>TLS_AES_256_GCM_SHA384</sslCipher>
+        <sslProtocol>TLS/SSL</sslProtocol>
+        <url>https://www.google.com/</url>
+        <userId>c@gmail.com</userId>
+    </link>
+    <link>
+        <certificateInfo>Issuer: CN=WE2,O=Google Trust Services,C=US, Subject: CN=www.google.com, Expiration: Mon Jun 23 03:56:26 CDT 2025</certificateInfo>
+        <responseCode>200</responseCode>
+        <responseMessage>Scraped successfully</responseMessage>
+        <sslCipher>TLS_AES_256_GCM_SHA384</sslCipher>
+        <sslProtocol>TLS/SSL</sslProtocol>
+        <url>https://www.google.com/</url>
+        <userId>c@gmail.com</userId>
+    </link>
+    <link>
+        <certificateInfo>Issuer: CN=WE2,O=Google Trust Services,C=US, Subject: CN=www.google.com, Expiration: Mon Jun 23 03:56:26 CDT 2025</certificateInfo>
+        <responseCode>200</responseCode>
+        <responseMessage>Scraped successfully</responseMessage>
+        <sslCipher>TLS_AES_256_GCM_SHA384</sslCipher>
+        <sslProtocol>TLS/SSL</sslProtocol>
+        <url>https://www.google.com/</url>
+        <userId>c@gmail.com</userId>
+    </link>
+    <link>
+        <certificateInfo>Issuer: CN=WE2,O=Google Trust Services,C=US, Subject: CN=www.google.com, Expiration: Mon Jun 23 03:56:26 CDT 2025</certificateInfo>
+        <id>2</id>
+        <responseCode>200</responseCode>
+        <responseMessage>Scraped successfully</responseMessage>
+        <sslCipher>TLS_AES_256_GCM_SHA384</sslCipher>
+        <sslProtocol>TLS/SSL</sslProtocol>
+        <url>https://www.google.com/</url>
+        <userId>test@gmail.com</userId>
+    </link>
+    <link>
+        <certificateInfo>Issuer: CN=WE1,O=Google Trust Services,C=US, Subject: CN=crawlbase.com, Expiration: Thu Jul 10 05:14:40 CDT 2025</certificateInfo>
+        <id>3</id>
+        <responseCode>404</responseCode>
+        <responseMessage>Rescanned successfully</responseMessage>
+        <sslCipher>TLS_AES_256_GCM_SHA384</sslCipher>
+        <sslProtocol>TLS/SSL</sslProtocol>
+        <url>https://crawlbase.com/blog/web-scraping-java/new</url>
+        <userId>testing email</userId>
+    </link>
+    <link>
+        <certificateInfo>Issuer: CN=Amazon RSA 2048 M02,O=Amazon,C=US, Subject: CN=*.brightspace.com, Expiration: Thu Jul 31 18:59:59 CDT 2025</certificateInfo>
+        <id>4</id>
+        <responseCode>200</responseCode>
+        <responseMessage>Scraped successfully</responseMessage>
+        <sslCipher>TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256</sslCipher>
+        <sslProtocol>TLS/SSL</sslProtocol>
+        <url>https://ucmo.brightspace.com/</url>
+        <userId>testing email</userId>
+    </link>
+    <link>
+        <certificateInfo>Issuer: CN=WE2,O=Google Trust Services,C=US, Subject: CN=www.google.com, Expiration: Mon Jun 23 03:56:26 CDT 2025</certificateInfo>
+        <id>5</id>
+        <responseCode>404</responseCode>
+        <responseMessage>Rescanned successfully</responseMessage>
+        <sslCipher>TLS_AES_256_GCM_SHA384</sslCipher>
+        <sslProtocol>TLS/SSL</sslProtocol>
+        <url>https://www.google.com/new</url>
+        <userId>new@gmail.com</userId>
+    </link>
+    <link>
+        <certificateInfo>Issuer: CN=WE1,O=Google Trust Services,C=US, Subject: CN=crawlbase.com, Expiration: Thu Jul 10 05:14:40 CDT 2025</certificateInfo>
+        <id>6</id>
+        <responseCode>200</responseCode>
+        <responseMessage>Rescanned successfully</responseMessage>
+        <sslCipher>TLS_AES_256_GCM_SHA384</sslCipher>
+        <sslProtocol>TLS/SSL</sslProtocol>
+        <url>https://crawlbase.com/blog/</url>
+        <userId>new@gmail.com</userId>
+    </link>
+</links>

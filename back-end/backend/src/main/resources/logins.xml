@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<logins>
+    <login>
+        <email>test@example.com</email>
+        <password>hashed_password_1</password> <!-- Store a hashed password here -->
+        <lastLogin>2025-04-28T10:00:00</lastLogin> <!-- Timestamp of last login -->
+        <status>active</status> <!-- Can track whether the login is active or locked -->
+    </login>
+    <login>
+        <email>another@example.com</email>
+        <password>hashed_password_2</password> <!-- Store a hashed password here -->
+        <lastLogin>2025-04-27T15:30:00</lastLogin> <!-- Timestamp of last login -->
+        <status>locked</status> <!-- Example of an inactive/locked account -->
+    </login>
+    ...
+</logins>

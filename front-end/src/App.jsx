@@ -1,15 +1,13 @@
 import React from "react";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";  // Don't need BrowserRouter here anymore
 import Login from "./Pages/Login";
-import Background from "./Components/background";
 import CheckURL from "./Pages/checkURL"; // Adjust according to your folder structure
-import './dist/output.css';  // Ensure Tailwind CSS is properly imported
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<Login />} />
-      <Route path="/check" element={<CheckURL />} />
+      <Route path="/checkURL" element={<CheckURL />} />
     </Routes>
   );
 }

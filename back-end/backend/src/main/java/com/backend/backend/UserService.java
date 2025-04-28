@@ -1,39 +1,34 @@
 package com.backend.backend;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import jakarta.xml.bind.JAXBException;
 
 import java.util.List;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.*;
-
-
 
 @Service
 public class UserService {
 
+    private final XMLUtils xmlUtils;
+
     @Autowired
-    private UserRepository userRepository;
-
-    @SuppressWarnings("unused")
-    @Autowired
-    private WebScraper webScraper;
-
-    public User saveUser(User user) {
-        return userRepository.save(user);
+    public UserService(XMLUtils xmlUtils) {
+        this.xmlUtils = xmlUtils; // Inject XMLUtils
     }
 
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    // Add User logic
+    public void addUser(User newUser) throws JAXBException {
+        List<User> users = xmlUtils.readUsersFromXML();
+        users.add(newUser);
+        xmlUtils.writeUsersToXML(users);
     }
 
-    public User getUserById(Long id) {
-        return userRepository.findById(id).orElse(null);
-    }
-
-    public User updateUser(User user) {
-        return userRepository.save(user);
-    }
-
-    public void deleteUser(Long id) {
-        userRepository.deleteById(id);
+    public User getMostRecentUser() throws JAXBException {
+        List<User> users = xmlUtils.readUsersFromXML(); // Read all users from users.xml
+        if (!users.isEmpty()) {
+            return users.get(users.size() - 1); // Return the last user
+        }
+        return null; // No users found
     }
 }

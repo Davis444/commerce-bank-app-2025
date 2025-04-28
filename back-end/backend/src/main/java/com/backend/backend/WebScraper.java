@@ -15,11 +15,10 @@ public class WebScraper {
 
     public String scrapeUrl(String url) {
         try {
-            // Removed unnecessary encoding
-            String html = restTemplate.getForObject(url, String.class);  // Directly use the URL
-            return Jsoup.parse(html).text(); // Extract readable text from HTML
+            String html = restTemplate.getForObject(url, String.class);
+            return Jsoup.parse(html).text();
         } catch (Exception e) {
-            return "Error fetching URL: " + e.getMessage();  // Catch general exceptions
+            return "Error fetching URL: " + e.getMessage();
         }
     }
 }

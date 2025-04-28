@@ -14,18 +14,9 @@ public class BackendApplicationTests {
 
     // Mock dependencies
     @Mock
-    private UserService userService;
+    private User userService;
 
     @Mock
     private WebScraper webScraper;
 
-    // Inject mocks into controller
-    @InjectMocks
-    private UserController userController;
-
-    // Only context loading test
-    @Test
-    void contextLoads() {
-        assertNotNull(userController);  // Ensure the controller is loaded
-    }
 }

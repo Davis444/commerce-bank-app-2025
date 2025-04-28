@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<users>
+    <user>
+        <email>user1@example.com</email>
+        <password>password123</password>
+    </user>
+    <user>
+        <email>user2@example.com</email>
+        <password>anotherpassword</password>
+    </user>
+    <user>
+        <email>c@gmail.com</email>
+        <password>ddd</password>
+    </user>
+    <user>
+        <email>c@gmail.com</email>
+        <password>ddd</password>
+    </user>
+    <user>
+        <email>c@gmail.com</email>
+        <password>ddd</password>
+    </user>
+    <user>
+        <email>c@gmail.com</email>
+        <password>ddd</password>
+    </user>
+    <user>
+        <email>test@gmail.com</email>
+        <password>123</password>
+    </user>
+    <user>
+        <email>c@gmail.com</email>
+        <password>ddd</password>
+    </user>
+    <user>
+        <email>test@gmail.com</email>
+        <password>gfgf</password>
+    </user>
+    <user>
+        <email>testing email</email>
+        <password>testing</password>
+    </user>
+    <user>
+        <email>new@gmail.com</email>
+        <password>sss</password>
+    </user>
+</users>

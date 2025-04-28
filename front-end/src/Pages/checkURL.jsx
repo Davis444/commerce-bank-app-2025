@@ -1,214 +1,479 @@
 import React, { useState, useEffect } from "react";
-import '../index.css'; // Global CSS for basic styles
-import Background from '../Components/background';
+import "../index.css";
+import Background from "../Components/background";
+import axios from "axios";
+
 const CheckURL = () => {
   const [url, setUrl] = useState("");
-  const [title, setTitle] = useState(null);
+  const [certificateInfo, setCertificateInfo] = useState(null);
+  const [responseCode, setResponseCode] = useState(null);
+  const [responseHeaders, setResponseHeaders] = useState(null);
   const [sslStatus, setSslStatus] = useState(null);
   const [error, setError] = useState(null);
-  const [squares, setSquares] = useState([]);
+  const [success, setSuccess] = useState(null);
+  const [savedLinks, setSavedLinks] = useState([]);
+  const [showSavedLinks, setShowSavedLinks] = useState(false);
+  const [editingId, setEditingId] = useState(null); // Tracks which URL is being edited
+  const [newUrl, setNewUrl] = useState(""); // New URL entered during editing
 
-  // Function to create moving squares with random movement directions
-  const createSquares = () => {
-    const numSquares = 15;
-    const newSquares = [];
-    for (let i = 0; i < numSquares; i++) {
-      // Randomize direction for each square (both positive and negative)
-      const randomX = (Math.random() * 40 - 20); // Random horizontal movement (-20vw to 20vw)
-      const randomY = (Math.random() * 40 - 20); // Random vertical movement (-20vh to 20vh)
-      const randomDuration = Math.random() * 15 + 10; // Random animation duration between 10s and 25s
-      const randomDelay = Math.random() * 5; // Random animation delay
-
-      newSquares.push({
-        id: i,
-        top: `${Math.random() * 100}vh`, // Random initial Y position
-        left: `${Math.random() * 100}vw`, // Random initial X position
-        xMove: randomX, // Store random horizontal movement
-        yMove: randomY, // Store random vertical movement
-        animationDuration: `${randomDuration}s`,
-        animationDelay: `${randomDelay}s`,
-        backgroundColor: `rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, 0.5)`,
-      });
-    }
-    setSquares(newSquares);
-  };
-
+  // Fetch saved links on page load
   useEffect(() => {
-    createSquares();
+    fetchSavedLinks();
   }, []);
 
-  useEffect(() => {
-    // Inject custom keyframes for random square movements
-    squares.forEach((square) => {
-      const styleSheet = document.styleSheets[0];
-      const keyframes = `
-        @keyframes moveSquare-${square.id} {
-          0% {
-            transform: translate(0, 0);
-          }
-          50% {
-            transform: translate(${square.xMove}vw, ${square.yMove}vh);
-          }
-          100% {
-            transform: translate(0, 0);
-          }
-        }
-      `;
-      styleSheet.insertRule(keyframes, styleSheet.cssRules.length);
-    });
-  }, [squares]);
-
-  const containerStyle = {
-    position: "relative",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    minHeight: "100vh",
-    background: "linear-gradient(135deg, rgba(15, 23, 42, 1), rgba(21, 32, 43, 1))", // Ensure this is correct
-    backgroundSize: "400% 400%",
-    animation: "gradientBackground 6s ease infinite",
-    overflow: "hidden",
-  };
-  
-  const formStyle = {
-    backgroundColor: "white",
-    padding: "32px",
-    borderRadius: "12px",
-    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-    width: "100%",
-    maxWidth: "400px",
-    position: "relative", // Keeps the form on top of the squares
-    zIndex: 1, // Ensures the form is above the background squares
-  };
-
-  const headingStyle = {
-    fontSize: "24px",
-    fontWeight: "600",
-    color: "#2d3748",
-    textAlign: "center",
-    marginBottom: "12px",
-  };
-
-  const paragraphStyle = {
-    color: "#4a5568",
-    textAlign: "center",
-    marginBottom: "24px",
-  };
-
-  const inputStyle = {
-    width: "100%",
-    padding: "12px",
-    border: "1px solid #e2e8f0",
-    borderRadius: "8px",
-    marginBottom: "16px",
-    fontSize: "16px",
-  };
-
-  const buttonStyle = {
-    width: "100%",
-    padding: "12px",
-    backgroundColor: "#3182ce",
-    color: "white",
-    fontWeight: "600",
-    borderRadius: "8px",
-    border: "none",
-    cursor: "pointer",
-    transition: "background-color 0.3s",
-  };
-
-  const buttonHoverStyle = {
-    ...buttonStyle,
-    backgroundColor: "#2b6cb0",
-  };
-
-  // Function to handle the scraping logic
-  const handleScrape = async () => {
-    setTitle(null);
-    setSslStatus(null);
+  const resetStatus = () => {
     setError(null);
+    setSuccess(null);
+    setCertificateInfo(null);
+    setResponseCode(null);
+    setResponseHeaders(null);
+    setSslStatus(null);
+  };
 
-    if (!url.startsWith("http://") && !url.startsWith("https://")) {
-      setError("Please enter a valid URL starting with http:// or https://");
+  const fetchSavedLinks = async () => {
+    try {
+      const response = await axios.get("http://localhost:8080/api/links/list");
+      setSavedLinks(response.data);
+    } catch (error) {
+      console.error("Error fetching saved URLs:", error);
+      setError("Failed to fetch saved URLs.");
+    }
+  };
+
+  const handleScrape = async () => {
+    resetStatus();
+    if (!isValidURL(url)) {
+      setError("Invalid URL. Please enter a valid URL starting with http:// or https://.");
       return;
     }
-
-    const isHttps = url.startsWith("https://");
-
     try {
-      if (url.includes("google")) {
-        setTitle("Google");
-      } else if (url.includes("github")) {
-        setTitle("GitHub");
-      } else {
-        setTitle("Unknown Website");
-      }
-
-      setSslStatus(isHttps);
+      const response = await axios.post("http://localhost:8080/api/links/scrape", null, { params: { url } });
+      const { sslProtocol, sslCipher, certificateInfo, responseCode, responseMessage } = response.data;
+      setSslStatus(`${sslProtocol} (${sslCipher})`);
+      setCertificateInfo(certificateInfo);
+      setResponseCode(responseCode);
+      setResponseHeaders(responseMessage);
+      setSuccess("Scrape successful!");
     } catch (error) {
-      setError("Error fetching the URL.");
+      console.error("Error scraping website:", error);
+      setError("An error occurred while scraping the URL. Please try again.");
     }
+  };
+
+  const handleSave = async () => {
+    resetStatus();
+    if (!isValidURL(url)) {
+      setError("Invalid URL. Cannot save.");
+      return;
+    }
+    if (savedLinks.some((link) => link.url === url)) {
+      setError("This URL is already saved.");
+      return;
+    }
+    try {
+      const response = await axios.post("http://localhost:8080/api/links/save", null, { params: { url } });
+      setSuccess(`URL saved: ${response.data.url}`);
+      fetchSavedLinks();
+    } catch (error) {
+      console.error("Error saving URL:", error);
+      setError("Failed to save the URL.");
+    }
+  };
+
+  const handleEditSubmit = async () => {
+    if (!editingId || !isValidURL(newUrl)) {
+      setError("Invalid ID or URL.");
+      return;
+    }
+    try {
+      await axios.put("http://localhost:8080/api/links/edit", null, {
+        params: { id: editingId, newUrl },
+      });
+      setEditingId(null); // Reset editing state
+      setNewUrl("");
+      fetchSavedLinks(); // Refresh links list
+      setSuccess("URL updated successfully!");
+    } catch (error) {
+      console.error("Error editing URL:", error);
+      setError("Failed to edit the URL.");
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!id) {
+      setError("Invalid ID. Cannot delete.");
+      return;
+    }
+    try {
+      await axios.delete(`http://localhost:8080/api/links/delete`, {
+        params: { id }, // Ensure `id` is sent correctly
+      });
+      setSuccess("URL deleted successfully!");
+      fetchSavedLinks();
+    } catch (error) {
+      console.error("Error deleting URL:", error);
+      setError("Failed to delete the URL.");
+    }
+  };
+
+  const handleRescan = async (id) => {
+    try {
+      const response = await axios.post("http://localhost:8080/api/links/rescan", null, { params: { id } });
+      const { sslProtocol, sslCipher, certificateInfo, responseCode, responseMessage } = response.data;
+      setSslStatus(`${sslProtocol} (${sslCipher})`);
+      setCertificateInfo(certificateInfo);
+      setResponseCode(responseCode);
+      setResponseHeaders(responseMessage);
+      setSuccess(`Rescan complete for URL: ${response.data.url}`);
+    } catch (error) {
+      console.error("Error rescanning URL:", error);
+      setError("Failed to rescan the URL.");
+    }
+  };
+
+  const isValidURL = (url) => {
+    const pattern = new RegExp(
+      "^(https?:\\/\\/)" +
+        "((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.?)+[a-z]{2,}|" +
+        "((\\d{1,3}\\.){3}\\d{1,3}))" +
+        "(\\:\\d+)?(\\/[-a-z\\d%@_.~+&:]*)*" +
+        "(\\?[;&a-z\\d%@_.,~+&:=-]*)?" +
+        "(\\#[-a-z\\d_]*)?$",
+      "i"
+    );
+    return pattern.test(url);
   };
 
   return (
-    <div style={containerStyle}>
-      <div style={formStyle}>
-        <h2 style={headingStyle}>Web Scraper Page</h2>
-        <p style={paragraphStyle}>Scrape a website to retrieve details.</p>
-
-        <div>
-          <input
-            type="text"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="Enter website URL (http:// or https://)"
-            style={inputStyle}
-          />
-          <button
-            onClick={handleScrape}
-            style={buttonStyle}
-            onMouseOver={(e) => (e.target.style.backgroundColor = buttonHoverStyle.backgroundColor)}
-            onMouseOut={(e) => (e.target.style.backgroundColor = buttonStyle.backgroundColor)}
-          >
-            Scrape Website
-          </button>
-        </div>
-
-        {error && <p style={{ color: "red", textAlign: "center" }}>{error}</p>}
-        {sslStatus !== null && (
-          <p style={{ textAlign: "center" }}>SSL Enabled: {sslStatus ? "Yes" : "No"}</p>
-        )}
-        {title && <p style={{ textAlign: "center" }}>Page Title: {title}</p>}
-      </div>
-
-      {/* Render the moving squares */}
+    <div
+      style={{
+        position: "relative",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "flex-start",
+        minHeight: "100vh",
+        padding: "50px 20px",
+        background: "linear-gradient(135deg, #0f172a, #15202b)",
+        backgroundSize: "400% 400%",
+        animation: "gradientBackground 6s ease infinite",
+        overflow: "hidden",
+      }}
+    >
+      <Background />
       <div
         style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
+          backgroundColor: "rgba(255, 255, 255, 0.05)",
+          boxShadow: "0px 4px 15px rgba(0, 0, 0, 0.4)",
+          padding: "32px",
+          borderRadius: "20px",
           width: "100%",
-          height: "100%",
-          zIndex: 0,
-          backgroundColor: "#f7fafc", // Match the background color of the login page
+          maxWidth: "600px",
+          backdropFilter: "blur(10px)",
+          zIndex: 1,
+          border: "1px solid rgba(255, 255, 255, 0.15)",
         }}
       >
-        {squares.map((square) => (
-          <div
-            key={square.id}
-            className="square"
+        <h2
+          style={{
+            fontSize: "28px",
+            color: "white",
+            textAlign: "center",
+            marginBottom: "25px",
+            letterSpacing: "1.5px",
+            fontWeight: "500",
+          }}
+        >
+          Web Scraper
+        </h2>
+  
+        {/* URL Input */}
+        <input
+          type="text"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="Enter website URL (http:// or https://)"
+          style={{
+            width: "100%",
+            padding: "12px",
+            borderRadius: "10px",
+            marginBottom: "15px",
+            border: "1px solid rgba(255, 255, 255, 0.2)",
+            backgroundColor: "rgba(0, 0, 0, 0.3)",
+            color: "white",
+            fontSize: "14px",
+          }}
+        />
+  
+        {/* Buttons */}
+        <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginTop: "20px",
+          width: "100%",
+        }}
+        >      
+        <button
+          onClick={handleScrape}
+          className="primary-btn"
+          style={{
+            backgroundColor: "#2563eb",
+            color: "white",
+            padding: "10px 20px",
+            borderRadius: "60px",
+            border: "none",
+            fontSize: "16px",
+            cursor: "pointer",
+            marginTop: "10px",
+            transition: "transform 0.2s",
+          }}
+          onMouseOver={(e) => (e.target.style.transform = "scale(1.05)")}
+          onMouseOut={(e) => (e.target.style.transform = "scale(1)")}
+        >
+          Scrape Website
+        </button>
+        <button
+          onClick={handleSave}
+          className="secondary-btn"
+          style={{
+            backgroundColor: "#10b981",
+            color: "white",
+            padding: "10px 30px",
+            borderRadius: "60px",
+            border: "none",
+            fontSize: "16px",
+            cursor: "pointer",
+            marginTop: "10px",
+            transition: "transform 0.2s",
+          }}
+          onMouseOver={(e) => (e.target.style.transform = "scale(1.05)")}
+          onMouseOut={(e) => (e.target.style.transform = "scale(1)")}
+        >
+          Save URL
+        </button>
+        </div>
+        {/* Display Success/Error */}
+        {error && (
+          <p style={{ color: "#ef4444", textAlign: "center", marginTop: "10px", fontSize: "14px" }}>
+            {error}
+          </p>
+        )}
+        {success && (
+          <p style={{ color: "#10b981", textAlign: "center", marginTop: "10px", fontSize: "14px" }}>
+            {success}
+          </p>
+        )}
+  
+        {/* Scraped Information */}
+        {certificateInfo && (
+          <div style={{ marginTop: "20px", color: "white" }}>
+            <h3 style={{ fontSize: "18px", marginBottom: "10px" }}>Scraped Information</h3>
+            <p>
+              <strong>SSL Status:</strong> {sslStatus}
+            </p>
+            <p>
+              <strong>Certificate:</strong> {certificateInfo}
+            </p>
+            <p>
+              <strong>Response Code:</strong> {responseCode}
+            </p>
+            <p>
+              <strong>Headers:</strong> {responseHeaders}
+            </p>
+          </div>
+        )}
+  
+        {/* Dropdown for Saved Links */}
+        <div style={{ marginTop: "30px" }}>
+          <button
+            onClick={() => setShowSavedLinks(!showSavedLinks)}
+            className="secondary-btn"
             style={{
-              top: square.top,
-              left: square.left,
-              animationDelay: square.animationDelay,
-              backgroundColor: square.backgroundColor,
-              animationDuration: square.animationDuration, // Randomize animation duration
-              animationName: `moveSquare-${square.id}`, // Unique class name per square
+              width: "100%",
+              backgroundColor: "#2563eb",
+              color: "white",
+              padding: "12px 30px",
+              borderRadius: "8px",
+              border: "none",
+              fontSize: "16px",
+              cursor: "pointer",
+              marginBottom: "15px",
+              transition: "transform 0.2s",
             }}
-          ></div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
+            onMouseOver={(e) => (e.target.style.transform = "scale(1.05)")}
+            onMouseOut={(e) => (e.target.style.transform = "scale(1)")}
+          >
+            {showSavedLinks ? "Hide Saved Links" : "Show Saved Links"}
+          </button>
+  
+          {showSavedLinks && (
+            <ul style={{ listStyle: "none", padding: 0, marginTop: "20px", color: "white" }}>
+              {savedLinks.length === 0 ? (
+                <li
+                  style={{
+                    textAlign: "center",
+                    marginTop: "10px",
+                    fontSize: "14px",
+                    color: "rgba(255, 255, 255, 0.8)",
+                  }}
+                >
+                  No saved URLs yet.
+                </li>
+              ) : (
+                savedLinks.map((link) => (
+                  <li
+                    key={link.id}
+                    style={{
+                      marginBottom: "10px",
+                      padding: "10px",
+                      borderRadius: "8px",
+                      backgroundColor: "rgba(255, 255, 255, 0.1)",
+                    }}
+                  >
+                    <p style={{ fontSize: "16px", color: "white" }}>{link.url}</p>
+                    <div style={{ marginTop: "5px", display: "flex", justifyContent: "space-between" }}>
+                      <button
+                        onClick={() => {
+                          setEditingId(link.id);
+                          setNewUrl(link.url);
+                        }}
+                        className="small-btn"
+                        style={{
+                          backgroundColor: "#10b981",
+                          padding: "8px 15px",
+                          borderRadius: "6px",
+                          border: "none",
+                          cursor: "pointer",
+                          color: "white",
+                          transition: "transform 0.2s",
+                        }}
+                        onMouseOver={(e) => (e.target.style.transform = "scale(1.05)")}
+                        onMouseOut={(e) => (e.target.style.transform = "scale(1)")}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleRescan(link.id)}
+                        className="small-btn"
+                        style={{
+                          backgroundColor: "#2563eb",
+                          padding: "8px 15px",
+                          borderRadius: "6px",
+                          border: "none",
+                          cursor: "pointer",
+                          color: "white",
+                          transition: "transform 0.2s",
+                        }}
+                        onMouseOver={(e) => (e.target.style.transform = "scale(1.05)")}
+                        onMouseOut={(e) => (e.target.style.transform = "scale(1)")}
+                      >
+                        Rescan
+                      </button>
+                      <button
+                        onClick={() => handleDelete(link.id)}
+                        className="small-btn danger-btn"
+                        style={{
+                          backgroundColor: "#ef4444",
+                          padding: "8px 15px",
+                          borderRadius: "6px",
+                          border: "none",
+                          cursor: "pointer",
+                          color: "white",
+                          transition: "transform 0.2s",
+                        }}
+                        onMouseOver={(e) => (e.target.style.transform = "scale(1.05)")}
+                        onMouseOut={(e) => (e.target.style.transform = "scale(1)")}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </li>
+                ))
+              )}
+            </ul>
+          )}
+        </div>
+        {/* Edit Modal */}
+        {editingId && (
+        <div
+          style={{
+            position: "fixed",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            backgroundColor: "rgba(0, 0, 0, 0.8)",
+            padding: "30px",
+            borderRadius: "15px",
+            textAlign: "center",
+            zIndex: 999,
+            boxShadow: "0px 5px 20px rgba(0, 0, 0, 0.5)",
+            width: "90%",
+            maxWidth: "400px",
+          }}
+        >
+          <h3 style={{ color: "white", marginBottom: "20px", fontSize: "20px" }}>Edit URL</h3>
+          <input
+            type="text"
+            value={newUrl}
+            onChange={(e) => setNewUrl(e.target.value)} // Update new URL as user types
+            placeholder="Enter new URL"
+            style={{
+              width: "100%",
+              padding: "12px",
+              borderRadius: "8px",
+              marginBottom: "20px",
+              border: "1px solid rgba(255, 255, 255, 0.3)",
+              backgroundColor: "rgba(255, 255, 255, 0.1)",
+              color: "white",
+              fontSize: "14px",
+            }}
+          />
+          <div style={{ display: "flex", justifyContent: "space-between", gap: "10px" }}>
+            <button
+              onClick={handleEditSubmit} // Submit the new URL
+              style={{
+                backgroundColor: "#2563eb",
+                color: "white",
+                padding: "10px 20px",
+                borderRadius: "8px",
+                border: "none",
+                fontSize: "16px",
+                cursor: "pointer",
+                transition: "transform 0.2s",
+                flex: "1",
+              }}
+              onMouseOver={(e) => (e.target.style.transform = "scale(1.05)")}
+              onMouseOut={(e) => (e.target.style.transform = "scale(1)")}
+            >
+              Submit
+            </button>
+            <button
+              onClick={() => {
+                setEditingId(null); // Cancel editing
+                setNewUrl("");
+              }}
+              style={{
+                backgroundColor: "#ef4444",
+                color: "white",
+                padding: "10px 20px",
+                borderRadius: "8px",
+                border: "none",
+                fontSize: "16px",
+                cursor: "pointer",
+                transition: "transform 0.2s",
+                flex: "1",
+              }}
+              onMouseOver={(e) => (e.target.style.transform = "scale(1.05)")}
+              onMouseOut={(e) => (e.target.style.transform = "scale(1)")}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+        )};
+        </div>
+  </div>
+  )
+}
 export default CheckURL;

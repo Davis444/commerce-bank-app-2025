@@ -61,6 +61,18 @@ body {
     height: 100vh;
     position: relative;
   }
+    
+  .check-page-inner {
+    background-color: rgba(255, 255, 255, 0.2); /* Brighter white */
+    border: 2px solid rgba(255, 255, 255, 0.25); /* Lighter border */
+    box-shadow: 0 0 40px rgba(8, 7, 16, 0.8); /* Subtle shadow */
+    border-radius: 15px;
+    backdrop-filter: blur(20px);
+    padding: 90px 40px;
+    width: 500px;
+    position: relative;
+    z-index: 10; /* This ensures the login form is above the squares */
+  }
   
   .login-page-inner {
     background-color: rgba(255, 255, 255, 0.2); /* Brighter white */

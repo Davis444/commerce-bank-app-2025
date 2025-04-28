@@ -1,134 +1,185 @@
 package com.backend.backend;
 
-import com.example.my_backend.Domain.CertificateInfoDTO;
-import com.example.my_backend.Domain.Customer;
-import com.example.my_backend.Domain.Link;
-import com.example.my_backend.Domain.UrlAnalysisResult;
-import com.example.my_backend.Repository.CustomerRepository;
-import com.example.my_backend.Repository.LinkRepository;
-import lombok.AllArgsConstructor;
-import org.springframework.stereotype.Service;
+import java.net.URL;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;
-import java.net.URL;
-import java.security.cert.*;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import javax.net.ssl.SSLSession;
 
-@AllArgsConstructor
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import jakarta.xml.bind.JAXBException;
+
 @Service
 public class LinkService {
 
     private final LinkRepository linkRepository;
-    private final CustomerRepository customerRepository;
+    private final UserService userService;
 
-    public Link create(Link url, String userId){
-
-        Customer customer = customerRepository.findByUserId(userId).orElse(null);
-
-
-        if(customer != null){
-            url.setCustomer(customer);
-        }
-        return linkRepository.save(url);
+    @Autowired
+    public LinkService(LinkRepository linkRepository, UserService userService) {
+        this.linkRepository = linkRepository;
+        this.userService = userService;
     }
-    public void analyze(Long id){
-        Link url = linkRepository.findById(id).orElse(null);
+
+    // Save a URL for future analysis
+    public Link saveUrl(String url) throws JAXBException {
+        User mostRecentUser = userService.getMostRecentUser();
+
+        if (mostRecentUser == null) {
+            throw new IllegalStateException("No logged-in user found.");
+        }
+
+        // Prevent duplicate URLs for the same user
+        List<Link> existingLinks = linkRepository.findAllByUserId(mostRecentUser.getEmail());
+        if (existingLinks.stream().anyMatch(link -> link.getUrl().equals(url))) {
+            throw new IllegalArgumentException("This URL has already been saved.");
+        }
+
+        Link newLink = new Link();
+        newLink.setId(UUID.randomUUID().getMostSignificantBits() & Long.MAX_VALUE); // Generate unique ID
+        newLink.setUrl(url);
+        newLink.setUserId(mostRecentUser.getEmail());
+        newLink.setResponseMessage("URL saved for future analysis");
+
+        return linkRepository.save(newLink);
+    }
+
+    // List all URLs for the logged-in user
+    public List<Link> listUrlsForUser() throws JAXBException {
+        User mostRecentUser = userService.getMostRecentUser();
+
+        if (mostRecentUser == null) {
+            throw new IllegalStateException("No logged-in user found.");
+        }
+
+        return linkRepository.findAllByUserId(mostRecentUser.getEmail());
+    }
+
+    // Edit a saved URL
+    public Link editUrl(Long id, String newUrl) throws JAXBException, IOException {
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("Invalid ID provided for the edit operation.");
+        }
+        if (newUrl == null || newUrl.isBlank()) {
+            throw new IllegalArgumentException("New URL cannot be null or blank.");
+        }
+    
+        // Retrieve the link and update the URL
+        Link link = linkRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("No link found with the provided ID."));
+    
+        link.setUrl(newUrl); // Overwrite the URL
+        link.setResponseMessage("URL updated successfully.");
+    
+        // Save the updated link
+        linkRepository.save(link);
+    
+        // Rescan the updated URL to scrape new details
+        return rescanUrl(id);
+    }
+
+    // Remove a saved URL
+    public void removeUrl(Long id) throws JAXBException {
+        if (id == null) {
+            throw new IllegalArgumentException("Invalid ID for delete operation.");
+        }
+
+        Optional<Link> link = linkRepository.findById(id);
+        if (link.isEmpty()) {
+            throw new IllegalArgumentException("Link with the provided ID does not exist.");
+        }
+
+        linkRepository.deleteById(id);
+    }
+
+    // Rescan a saved URL
+    public Link rescanUrl(Long id) throws JAXBException, IOException {
+        if (id == null) {
+            throw new IllegalArgumentException("Invalid ID for rescan operation.");
+        }
+    
+        Link existingLink = linkRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("No link found with the provided ID."));
+    
         try {
-            URL URL = new URL(url.getUrl());
-            System.out.println("url :" + url.getUrl());
-            System.out.println("Name :" + url.getName());
-            HttpsURLConnection connection = (HttpsURLConnection) URL.openConnection();
+            // Perform scraping logic
+            URL websiteUrl = new URL(existingLink.getUrl());
+            HttpsURLConnection connection = (HttpsURLConnection) websiteUrl.openConnection();
+            connection.setRequestMethod("GET");
             connection.connect();
-            SSLSession session = connection.getSSLSession().get();
-
-
-            url.setCerts(Arrays.asList(connection.getServerCertificates()));
-
-            url.setResponseCode(connection.getResponseCode());
-            url.setResponseMessage(connection.getResponseMessage());
-            if(url.getResponseCode()== HttpsURLConnection.HTTP_OK){
-                url.setResponseHeader(connection.getHeaderFields());
+    
+            existingLink.setResponseCode(connection.getResponseCode());
+            existingLink.setResponseMessage("Rescanned successfully");
+            existingLink.setSslProtocol("TLS/SSL");
+            existingLink.setSslCipher(connection.getCipherSuite());
+    
+            // Handle SSL certificate
+            Certificate[] certificates = connection.getServerCertificates();
+            if (certificates.length > 0 && certificates[0] instanceof X509Certificate cert) {
+                existingLink.setCertificateInfo(String.format("Issuer: %s, Subject: %s, Expiration: %s",
+                        cert.getIssuerX500Principal().getName(),
+                        cert.getSubjectX500Principal().getName(),
+                        cert.getNotAfter()));
+            } else {
+                existingLink.setCertificateInfo("No valid certificate found.");
             }
-            url.setCipher(connection.getCipherSuite());
-
-            url.setProtocol(session.getProtocol());
-
             connection.disconnect();
-        } catch (IOException e) {
-            System.err.println("An error occurred: " + e.getMessage());
+        } catch (Exception e) {
+            existingLink.setResponseCode(500);
+            existingLink.setResponseMessage("Failed to rescan the URL: " + e.getMessage());
+            existingLink.setCertificateInfo("Failed to fetch SSL details");
         }
-        linkRepository.save(url);
-    }
-    public Link update(Link url){
-        System.out.println("Id :" + url.getUrl_id());
-        System.out.println("Name :" + url.getName());
-        System.out.println("url :" + url.getUrl());
-        System.out.println("response Code :" + url.getResponseCode());
-        System.out.println("Message:" + url.getResponseMessage());
-        System.out.println("Protocol :" + url.getProtocol());
-        System.out.println("Cipher :" + url.getCipher());
-        System.out.println("Certs :" + url.getCerts());
-        System.out.println("Header :" + url.getResponseHeader());
-        return linkRepository.save(url);
-    }
-    public void delete(Link url){
-        linkRepository.delete(url);
+    
+        return linkRepository.save(existingLink);
     }
 
+    // Scrape and save URL details
+    public Link scrapeAndSave(String url) throws JAXBException, IOException {
+        User mostRecentUser = userService.getMostRecentUser();
 
+        if (mostRecentUser == null) {
+            throw new IllegalStateException("No logged-in user found.");
+        }
 
-    public UrlAnalysisResult analyze(String urlString) {
+        Link newLink = new Link();
+        newLink.setId(UUID.randomUUID().getMostSignificantBits() & Long.MAX_VALUE); // Generate unique ID
+        newLink.setUserId(mostRecentUser.getEmail());
+        newLink.setUrl(url);
+
         try {
-            URL url = new URL(urlString);
-            HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
+            URL websiteUrl = new URL(url);
+            HttpsURLConnection connection = (HttpsURLConnection) websiteUrl.openConnection();
+            connection.setRequestMethod("GET");
             connection.connect();
 
-            int responseCode = connection.getResponseCode();
-            String cipherSuite = connection.getCipherSuite();
+            newLink.setResponseCode(connection.getResponseCode());
+            newLink.setResponseMessage("Scraped successfully");
+            newLink.setSslProtocol("TLS/SSL");
+            newLink.setSslCipher(connection.getCipherSuite());
 
-
-            Map<String, String> headers = new LinkedHashMap<>();
-            for (Map.Entry<String, java.util.List<String>> entry : connection.getHeaderFields().entrySet()) {
-                if (entry.getKey() != null && entry.getValue() != null && !entry.getValue().isEmpty()) {
-                    headers.put(entry.getKey(), entry.getValue().get(0));
-                }
+            // Handle SSL certificate
+            Certificate[] certificates = connection.getServerCertificates();
+            if (certificates.length > 0 && certificates[0] instanceof X509Certificate cert) {
+                newLink.setCertificateInfo(String.format("Issuer: %s, Subject: %s, Expiration: %s",
+                        cert.getIssuerX500Principal().getName(),
+                        cert.getSubjectX500Principal().getName(),
+                        cert.getNotAfter()));
+            } else {
+                newLink.setCertificateInfo("No valid certificate found.");
             }
-
-            // 인증서 상세 정보 추출
-            List<CertificateInfoDTO> certificates = new ArrayList<>();
-            Certificate[] certs = connection.getServerCertificates();
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-
-            for (Certificate cert : certs) {
-                if (cert instanceof X509Certificate x509) {
-                    CertificateInfoDTO certDTO = new CertificateInfoDTO(
-                            x509.getSubjectDN().getName(),
-                            x509.getIssuerDN().getName(),
-                            sdf.format(x509.getNotBefore()),
-                            sdf.format(x509.getNotAfter()),
-                            x509.getSerialNumber().toString(),
-                            x509.getSigAlgName()
-                    );
-                    certificates.add(certDTO);
-                }
-            }
-
             connection.disconnect();
-
-            return new UrlAnalysisResult(
-                    String.valueOf(responseCode),
-                    cipherSuite,
-                    headers,
-                    certificates
-            );
-
-        } catch (IOException | RuntimeException e) {
-            throw new RuntimeException("Error analyzing URL: " + e.getMessage());
+        } catch (Exception e) {
+            newLink.setResponseCode(500);
+            newLink.setResponseMessage("Failed to scrape the URL: " + e.getMessage());
+            newLink.setCertificateInfo("Failed to fetch SSL details");
         }
+
+        return linkRepository.save(newLink);
     }
-
-
 }
